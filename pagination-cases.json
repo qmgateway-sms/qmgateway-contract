@@ -1,0 +1,69 @@
+{
+    "about": "Auto-pagination iterators must yield every item exactly once, in the order shown, and stop when the next-page value is null. The mock server plays these when X-Contract-Scenario is pagination_messages or pagination_inbox.",
+    "cases": [
+        {
+            "name": "pagination_messages",
+            "operationId": "list_messages",
+            "direction": "newest_first",
+            "param": "before_id",
+            "next_field": "next_before_id",
+            "pages": [
+                [
+                    5,
+                    4
+                ],
+                [
+                    3,
+                    2
+                ],
+                [
+                    1
+                ]
+            ],
+            "expect_ids": [
+                5,
+                4,
+                3,
+                2,
+                1
+            ]
+        },
+        {
+            "name": "pagination_inbox",
+            "operationId": "get_inbox",
+            "direction": "oldest_first",
+            "param": "after_id",
+            "next_field": "next_after_id",
+            "pages": [
+                [
+                    1,
+                    2
+                ],
+                [
+                    3,
+                    4
+                ],
+                [
+                    5
+                ]
+            ],
+            "expect_ids": [
+                1,
+                2,
+                3,
+                4,
+                5
+            ]
+        },
+        {
+            "name": "empty_page",
+            "operationId": "list_messages",
+            "param": "before_id",
+            "next_field": "next_before_id",
+            "pages": [
+                []
+            ],
+            "expect_ids": []
+        }
+    ]
+}

@@ -1,0 +1,136 @@
+{
+    "about": "Every SDK webhook verifier must give the expected answer for each case, using this secret and this fixed current time. Compare in constant time. Tolerance is 300 seconds either side of now.",
+    "secret": "whsec_contract_test_secret",
+    "now": 1795680000,
+    "tolerance_seconds": 300,
+    "cases": [
+        {
+            "id": "valid",
+            "title": "A genuine, fresh request",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679995",
+                "X-QMGateway-Signature": "sha256=bece7e1225dbb5d65014c874c3ba9b54a0290d2c2960366a50ef50a72d1cb7af",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": true,
+            "reason": "ok"
+        },
+        {
+            "id": "valid_edge",
+            "title": "Exactly five minutes old is still accepted",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679700",
+                "X-QMGateway-Signature": "sha256=01cf3610ddaff7fd20e209da54eec573c490506e39e0afd01685d6661fbf0b95",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": true,
+            "reason": "ok"
+        },
+        {
+            "id": "tampered_body",
+            "title": "The body was changed after signing",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679995",
+                "X-QMGateway-Signature": "sha256=bece7e1225dbb5d65014c874c3ba9b54a0290d2c2960366a50ef50a72d1cb7af",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Failed   \",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "bad_signature"
+        },
+        {
+            "id": "wrong_secret",
+            "title": "Signed with another secret",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679995",
+                "X-QMGateway-Signature": "sha256=4acf6ba3476f0b9ab9b535c5ecf3b3bc27149ec24a9c5f6afd6bb20902bbea6a",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "bad_signature"
+        },
+        {
+            "id": "stale",
+            "title": "Valid signature but one hour old (a replay)",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795676400",
+                "X-QMGateway-Signature": "sha256=c5d6cda56e61aea78776135bd1e3acf22efce4391d0aed86ed71ce60723bcabf",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "stale_timestamp"
+        },
+        {
+            "id": "too_old_edge",
+            "title": "One second past the five minute limit",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679699",
+                "X-QMGateway-Signature": "sha256=2c47388886cca94ddd9cbbf193969c21f13c6df6902fd8208d0faf32b1af988a",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "stale_timestamp"
+        },
+        {
+            "id": "future",
+            "title": "Valid signature but an hour in the future",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795683600",
+                "X-QMGateway-Signature": "sha256=df36829bb214611cc7b1072bf4dfbc86fe2c5a33d7e9de6bf40598ca67457460",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "stale_timestamp"
+        },
+        {
+            "id": "no_signature",
+            "title": "The signature header is missing",
+            "headers": {
+                "X-QMGateway-Timestamp": "1795679995",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "missing_header"
+        },
+        {
+            "id": "no_timestamp",
+            "title": "The timestamp header is missing",
+            "headers": {
+                "X-QMGateway-Signature": "sha256=bece7e1225dbb5d65014c874c3ba9b54a0290d2c2960366a50ef50a72d1cb7af",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "missing_header"
+        },
+        {
+            "id": "garbage_timestamp",
+            "title": "The timestamp is not a number",
+            "headers": {
+                "X-QMGateway-Timestamp": "not-a-number",
+                "X-QMGateway-Signature": "sha256=e070b5d0c99018c594c62c4a4bea0dd234088cf22049f80613e45946aba60b8a",
+                "X-QMGateway-Event": "sms.delivered",
+                "X-QMGateway-Event-ID": "sms.delivered_0123456789abcdef"
+            },
+            "body": "{\"message_id\":1052,\"phone_number\":\"+265991234567\",\"status\":\"Delivered\",\"device_id\":2,\"mode\":\"live\",\"updated_at\":\"2026-11-26T10:30:00+02:00\"}",
+            "expect_verified": false,
+            "reason": "stale_timestamp"
+        }
+    ]
+}

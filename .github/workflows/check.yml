@@ -1,0 +1,25 @@
+# Checks that the contract files are well formed and that the mock server answers. Actions are pinned to full commit hashes (the tag is in the comment).
+name: Check
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with: { php-version: '8.5', extensions: 'curl, json', coverage: none }
+      - name: JSON files parse
+        run: for f in *.json; do php -r 'json_decode(file_get_contents($argv[1]), false, 512, JSON_THROW_ON_ERROR);' "$f" && echo "ok $f"; done
+      - name: PHP files have no syntax errors
+        run: php -l contract_mock.php && php -l contract_check.php
+      - name: The mock server answers
+        run: |
+          php -S 127.0.0.1:8120 contract_mock.php > /dev/null 2>&1 &
+          sleep 2
+          curl --fail --silent --show-error -H 'X-API-Key: qm_test_x' http://127.0.0.1:8120/api/v1/balance

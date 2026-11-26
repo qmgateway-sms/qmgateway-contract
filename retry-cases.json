@@ -1,0 +1,82 @@
+{
+    "about": "How every SDK must retry. The mock server (contract_mock.php) plays these scenarios when the request header X-Contract-Scenario names one. A \"delay\" is the pause an SDK must make before the next try.",
+    "rules": [
+        "Retry network errors, 429 and 5xx. Never retry other 4xx.",
+        "Wait Retry-After seconds when the answer has it (never more than 60); otherwise 1, 2, 4, 8 seconds. A little random jitter (up to 20%) is recommended but not required.",
+        "At most 4 retries (5 attempts in all) by default, configurable.",
+        "Use the SAME Idempotency-Key on every try of one send, and generate one if the caller gave none.",
+        "The final failure is a typed error carrying status, code, message and request_id.",
+        "Timeouts: 30 seconds by default, configurable. A timeout counts as a network error."
+    ],
+    "scenarios": [
+        {
+            "name": "rate_limited_then_ok",
+            "answers": [
+                {
+                    "status": 429,
+                    "headers": {
+                        "Retry-After": "1"
+                    }
+                },
+                {
+                    "status": 503
+                },
+                {
+                    "status": 202
+                }
+            ],
+            "expect": {
+                "attempts": 3,
+                "result": "success",
+                "same_idempotency_key": true,
+                "first_delay_seconds": 1
+            }
+        },
+        {
+            "name": "always_unavailable",
+            "answers": [
+                {
+                    "status": 503
+                }
+            ],
+            "repeat": "forever",
+            "expect": {
+                "attempts": 5,
+                "result": "error",
+                "error_status": 503
+            }
+        },
+        {
+            "name": "validation_error",
+            "answers": [
+                {
+                    "status": 422
+                }
+            ],
+            "expect": {
+                "attempts": 1,
+                "result": "error",
+                "error_code": "VALIDATION_ERROR"
+            }
+        },
+        {
+            "name": "retry_after_cap",
+            "answers": [
+                {
+                    "status": 429,
+                    "headers": {
+                        "Retry-After": "3600"
+                    }
+                },
+                {
+                    "status": 202
+                }
+            ],
+            "expect": {
+                "attempts": 2,
+                "result": "success",
+                "first_delay_seconds": 60
+            }
+        }
+    ]
+}

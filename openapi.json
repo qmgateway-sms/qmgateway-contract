@@ -1,0 +1,3545 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "QMGateway API",
+        "version": "1.0",
+        "description": "One account and one key for QMGateway services. The SMS service is available today: send SMS through your own Android gateway phones, track delivery, send one-time passwords and read statistics. Every request needs an API key in the X-API-Key header. Call the API from your server, never from a browser or an app.",
+        "termsOfService": "https://qmgateway.com/terms"
+    },
+    "externalDocs": {
+        "description": "Guides, recipes and webhooks",
+        "url": "https://qmgateway.com/developer"
+    },
+    "servers": [
+        {
+            "url": "https://qmgateway.com"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Account"
+        },
+        {
+            "name": "Messages"
+        },
+        {
+            "name": "One-time passwords"
+        },
+        {
+            "name": "Statistics"
+        },
+        {
+            "name": "Balance"
+        }
+    ],
+    "paths": {
+        "/api/v1/account": {
+            "get": {
+                "operationId": "get_account",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get your account",
+                "description": "QMGateway is the platform; your account can use services, and the SMS Gateway is available today. This endpoint tells an integration who it is talking to and whether each service is ready, so you can check before you send. Call it when your application starts, or from a health check.\n\nToday there is one service, sms. Its details include the plan, SMS left, how many phones you have and how many are online, and ready_to_send: true when the plan is active, SMS remain and a phone is online.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "any valid key",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "The account",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetAccountResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "The account",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "organisation": {
+                                                    "id": 19,
+                                                    "name": "Acme Pharmacy"
+                                                },
+                                                "key": {
+                                                    "mode": "live",
+                                                    "scopes": [
+                                                        "messages:send",
+                                                        "messages:read"
+                                                    ]
+                                                },
+                                                "services": [
+                                                    {
+                                                        "key": "sms",
+                                                        "name": "SMS Gateway",
+                                                        "status": "active",
+                                                        "details": {
+                                                            "plan": "Starter Monthly",
+                                                            "expires_at": "2026-12-20",
+                                                            "remaining_sms": 491,
+                                                            "phones": 1,
+                                                            "phones_online": 1,
+                                                            "receives_replies": true,
+                                                            "ready_to_send": true
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages": {
+            "post": {
+                "operationId": "send_message",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send a message",
+                "description": "Queues an SMS for delivery by one of your gateway phones. The API answers 202 Accepted straight away: the message is queued, not yet sent. Follow it with the status endpoint or a webhook.\n\nSend to one number with phone, or to up to 1,000 numbers with recipients. Each recipient becomes its own message with its own id.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:send",
+                "x-rate-limit-per-minute": 120,
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": false,
+                        "description": "Any unique string up to 100 characters. Repeating a request with the same key returns the original result and sends nothing twice.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted: the message is queued",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SendMessageResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Accepted: the message is queued",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "message_ids": [
+                                                    1052
+                                                ],
+                                                "recipients": 1,
+                                                "sms_units": 1,
+                                                "status": "Pending",
+                                                "remaining_units": 495,
+                                                "idempotent_replay": false,
+                                                "numbers": [
+                                                    "+265991234567"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "A number cannot be read",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "A number cannot be read",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "VALIDATION_ERROR",
+                                                "message": "Invalid phone number \"099123\". Write it with the country code, for example +265991234567, or as a local number that starts with 0, which is read as Malawi (+265).",
+                                                "request_id": "b8f49d2f0ea1a233"
+                                            }
+                                        }
+                                    },
+                                    "example2": {
+                                        "summary": "Not enough SMS left",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "INSUFFICIENT_BALANCE",
+                                                "message": "Insufficient SMS balance: 3 SMS left. Renew or upgrade your plan.",
+                                                "request_id": "4f21b9a07c5d8e13",
+                                                "details": {
+                                                    "remaining_units": 3,
+                                                    "plan": "Starter Monthly",
+                                                    "expires_at": "2026-12-17"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "phone": {
+                                        "description": "The recipient: international format (+265991234567) or a local number that starts with 0 (0991234567), which is read with your organisation's country (Malawi unless you set another). See Phone numbers.",
+                                        "type": "string"
+                                    },
+                                    "recipients": {
+                                        "description": "Between 1 and 1,000 numbers, in either format. The same number written two ways counts once.",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 1000
+                                    },
+                                    "message": {
+                                        "description": "The text, 1 to 1,600 characters. Long texts are split into parts and use more than one SMS unit (see Message length).",
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 1600
+                                    },
+                                    "type": {
+                                        "description": "A label for your own reporting: transactional (default), otp, bulk or scheduled.",
+                                        "type": "string",
+                                        "enum": [
+                                            "transactional",
+                                            "otp",
+                                            "bulk",
+                                            "scheduled"
+                                        ],
+                                        "default": "transactional"
+                                    },
+                                    "device_id": {
+                                        "description": "Send from this phone only (an id from List phones). Without it, QMGateway chooses a phone using your routing settings. A message with a device_id always stays with that phone.",
+                                        "type": "integer"
+                                    },
+                                    "scheduled_at": {
+                                        "description": "When to send, for example 2026-12-01T08:00:00+02:00. Include the time zone (Z or an offset such as +02:00); without one it is read as Malawi time. A time in the past sends immediately; more than 365 days ahead is refused. See Scheduling.",
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "required": [
+                                    "message"
+                                ]
+                            },
+                            "example": {
+                                "phone": "+265991234567",
+                                "message": "Your order #1052 is ready for collection.",
+                                "type": "transactional"
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "list_messages",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "List sent messages",
+                "description": "Returns the messages your organisation has sent, newest first. Use it to find what failed today, to check a customer's history, or to rebuild your own records after downtime. For one known message, Get a message is cheaper.\n\nPages work with before_id: pass the next_before_id from the last page to get the next one. next_before_id is null on the last page.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "description": "Pending, Scheduled, Sent to Gateway, Delivered, Failed or Cancelled.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "required": false,
+                        "description": "Only messages to this number, in either format.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "since",
+                        "in": "query",
+                        "required": false,
+                        "description": "Only messages created at or after this date or time.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "description": "1 to 100. Default 25.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "before_id",
+                        "in": "query",
+                        "required": false,
+                        "description": "Return messages older than this id (paging).",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A page of messages",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListMessagesResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "A page of messages",
+                                        "value": {
+                                            "success": true,
+                                            "data": [
+                                                {
+                                                    "id": 1052,
+                                                    "phone_number": "+265991234567",
+                                                    "status": "Failed",
+                                                    "message_type": "transactional",
+                                                    "sms_units": 1,
+                                                    "scheduled_time": null,
+                                                    "created_at": "2026-11-19 10:29:41",
+                                                    "sent_at": null,
+                                                    "delivered_at": null,
+                                                    "failed_at": "2026-11-19 10:30:02",
+                                                    "failure_reason": "The network did not accept the message."
+                                                }
+                                            ],
+                                            "next_before_id": null
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/devices": {
+            "get": {
+                "operationId": "list_devices",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "List phones",
+                "description": "Returns the phones connected to your account with their state and how much is waiting for each. Use an id as device_id when you send a message to keep it on that phone.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Your phones",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListDevicesResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Your phones",
+                                        "value": {
+                                            "success": true,
+                                            "data": [
+                                                {
+                                                    "id": 2,
+                                                    "name": "Samsung S23",
+                                                    "status": "online",
+                                                    "last_seen_at": "2026-11-19T13:15:41+02:00",
+                                                    "networks": [
+                                                        "airtel",
+                                                        "tnm",
+                                                        "other"
+                                                    ],
+                                                    "capacity": 1,
+                                                    "queued": 0
+                                                },
+                                                {
+                                                    "id": 42,
+                                                    "name": "TNM phone",
+                                                    "status": "online",
+                                                    "last_seen_at": "2026-11-19T13:15:30+02:00",
+                                                    "networks": [
+                                                        "tnm"
+                                                    ],
+                                                    "capacity": 2,
+                                                    "queued": 3
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/message_status": {
+            "get": {
+                "operationId": "get_message",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Get a message",
+                "description": "Returns one message that belongs to your organisation. Poll it sparingly (every few seconds at most) or, better, use webhooks and let QMGateway tell you.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:read",
+                "x-rate-limit-per-minute": 120,
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "description": "The message id returned when you sent it.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The message",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetMessageResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "The message",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "id": 1052,
+                                                "phone_number": "+265991234567",
+                                                "status": "Delivered",
+                                                "message_type": "transactional",
+                                                "sms_units": 1,
+                                                "scheduled_time": null,
+                                                "created_at": "2026-08-07 10:29:41",
+                                                "sent_at": "2026-08-07 10:29:44",
+                                                "delivered_at": "2026-08-07 10:30:00",
+                                                "failed_at": null,
+                                                "failure_reason": null,
+                                                "mode": "live"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No such message in your organisation",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "No such message in your organisation",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "MESSAGE_NOT_FOUND",
+                                                "message": "Message not found.",
+                                                "request_id": "2c8a90991f4ea083"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/inbox": {
+            "get": {
+                "operationId": "get_inbox",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Read received messages",
+                "description": "Returns SMS received on your gateway phones, oldest first, so you can process them in order. The easiest way to react to replies as they happen is the sms.incoming webhook; use this endpoint to catch up after downtime or when you cannot receive webhooks.\n\nKeep the highest id you have handled and pass it as after_id next time. Only plans that receive replies store them: receives tells you whether yours does.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [
+                    {
+                        "name": "after_id",
+                        "in": "query",
+                        "required": false,
+                        "description": "Only messages with a larger id than this (paging and catching up).",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "description": "Only messages from this number, in either format.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "description": "1 to 100. Default 50.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Received messages",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetInboxResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Received messages",
+                                        "value": {
+                                            "success": true,
+                                            "data": [
+                                                {
+                                                    "id": 88,
+                                                    "from": "+265991234567",
+                                                    "message": "YES",
+                                                    "received_at": "2026-11-19 11:02:10"
+                                                }
+                                            ],
+                                            "next_after_id": null,
+                                            "receives": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/otp/send": {
+            "post": {
+                "operationId": "send_otp",
+                "tags": [
+                    "One-time passwords"
+                ],
+                "summary": "Send a one-time password",
+                "description": "QMGateway generates the code, sends it by SMS (from your gateway phone) or by email, and keeps only what it needs to check it. You never see or store the code. Keep the returned request_reference and ask the user for the code they received. Verifying works the same for both.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "otp:send",
+                "x-rate-limit-per-minute": 30,
+                "parameters": [],
+                "responses": {
+                    "202": {
+                        "description": "Accepted: the code is on its way (SMS)",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SendOtpResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Accepted: the code is on its way (SMS)",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "request_reference": "otp_ff01caf7a75b52d406f93714",
+                                                "expires_in": 300,
+                                                "status": "queued",
+                                                "channel": "sms"
+                                            }
+                                        }
+                                    },
+                                    "example2": {
+                                        "summary": "Sent by email",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "request_reference": "otp_5397156b57dbd0acd2b6a205",
+                                                "expires_in": 300,
+                                                "status": "sent",
+                                                "channel": "email",
+                                                "email_otp_remaining": 49,
+                                                "email_otp_resets_at": "2026-12-18"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Email allowance used up",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Email allowance used up",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "EMAIL_OTP_LIMIT_REACHED",
+                                                "message": "Your email OTP allowance for this month is used up. It resets on 2026-12-18.",
+                                                "request_id": "26a4bca1c295d5ed",
+                                                "details": {
+                                                    "quota": 50,
+                                                    "used": 50,
+                                                    "resets_at": "2026-12-18"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "example2": {
+                                        "summary": "Not accepted",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "VALIDATION_ERROR",
+                                                "message": "Too many OTP requests. Try again later.",
+                                                "request_id": "5306c19890443ff6"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel": {
+                                        "description": "sms or email. If left out, it is email when you send only email, otherwise sms.",
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "description": "A number such as +265991234567 or 0991234567.",
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "description": "The address to send the code to. It counts against your plan's monthly email OTP allowance.",
+                                        "type": "string"
+                                    },
+                                    "purpose": {
+                                        "description": "What the code is for, for example login or payment. Default verification. It is kept with the request for your records.",
+                                        "type": "string"
+                                    },
+                                    "expiry_seconds": {
+                                        "description": "How long the code stays valid, 60 to 900 seconds (other values are adjusted into that range). Default 300 (5 minutes).",
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "phone": "+265991234567",
+                                "purpose": "login",
+                                "expiry_seconds": 300
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/otp/verify": {
+            "post": {
+                "operationId": "verify_otp",
+                "tags": [
+                    "One-time passwords"
+                ],
+                "summary": "Verify a one-time password",
+                "description": "Checks a code against the reference you got from Send. A wrong code is a normal answer (verified: false), not an HTTP error.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "otp:verify",
+                "x-rate-limit-per-minute": 120,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Checked",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VerifyOtpResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Checked",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "verified": true,
+                                                "status": "verified"
+                                            }
+                                        }
+                                    },
+                                    "example2": {
+                                        "summary": "Wrong, used or expired code",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "verified": false,
+                                                "status": "invalid_or_expired"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "request_reference": {
+                                        "description": "The reference returned by Send.",
+                                        "type": "string"
+                                    },
+                                    "code": {
+                                        "description": "What the user typed.",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "request_reference",
+                                    "code"
+                                ]
+                            },
+                            "example": {
+                                "request_reference": "otp_ff01caf7a75b52d406f93714",
+                                "code": "123456"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/statistics": {
+            "get": {
+                "operationId": "statistics",
+                "tags": [
+                    "Statistics"
+                ],
+                "summary": "Get statistics",
+                "description": "Returns your organisation's message totals for a period, your plan balance and the latest messages. Good for dashboards.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "statistics:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": false,
+                        "description": "today (default), week, month, year or custom.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true,
+                        "description": "First day of a custom period.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "description": "Last day of a custom period. Default today.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The statistics",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatisticsResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "The statistics",
+                                        "value": {
+                                            "success": true,
+                                            "timestamp": "2026-11-18T19:05:24+02:00",
+                                            "client": {
+                                                "id": 1,
+                                                "name": "Acme Pharmacy"
+                                            },
+                                            "period": {
+                                                "start_date": "2026-10-19",
+                                                "end_date": "2026-11-18",
+                                                "type": "month"
+                                            },
+                                            "statistics": {
+                                                "overview": {
+                                                    "total": 16,
+                                                    "sent": 6,
+                                                    "delivered": 3,
+                                                    "failed": 1,
+                                                    "pending": 2,
+                                                    "scheduled": 1,
+                                                    "unique_recipients": 6,
+                                                    "sms_units": 16
+                                                },
+                                                "quota": {
+                                                    "plan": "Starter Monthly",
+                                                    "quota": 500,
+                                                    "used": 4,
+                                                    "reserved": 3,
+                                                    "remaining": 493,
+                                                    "expires_at": "2026-12-17"
+                                                },
+                                                "recent_messages": [
+                                                    {
+                                                        "id": 1052,
+                                                        "phone_number": "+265991234567",
+                                                        "message": "Your order #1052 is ready for collection.",
+                                                        "status": "Delivered",
+                                                        "message_type": "transactional",
+                                                        "sms_units": 1,
+                                                        "created_at": "2026-11-18 19:01:12"
+                                                    }
+                                                ],
+                                                "daily": [
+                                                    {
+                                                        "date": "2026-11-18",
+                                                        "total": 5,
+                                                        "sent": 4,
+                                                        "failed": 1
+                                                    }
+                                                ],
+                                                "status_distribution": [
+                                                    {
+                                                        "status": "Delivered",
+                                                        "count": 3
+                                                    },
+                                                    {
+                                                        "status": "Failed",
+                                                        "count": 1
+                                                    }
+                                                ],
+                                                "top_recipients": [
+                                                    {
+                                                        "phone_number": "+265991234567",
+                                                        "total_messages": 4,
+                                                        "successful": 3,
+                                                        "failed": 1
+                                                    }
+                                                ],
+                                                "counts": {
+                                                    "scheduled": 1,
+                                                    "templates": 2,
+                                                    "contacts": 120,
+                                                    "incoming": 7
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Bad period",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Bad period",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "INVALID_PERIOD",
+                                                "message": "period must be today, week, month, year, or custom.",
+                                                "request_id": "9d1c0be2a41f77c3"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/scheduled": {
+            "get": {
+                "operationId": "list_scheduled",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "List scheduled messages",
+                "description": "Returns the messages you scheduled with scheduled_at that have not started sending. Use it to show customers what is coming, or to find the id you need to cancel or move one. Once a message starts sending it leaves this list: follow it with the status endpoint.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "description": "How many to return, 1 to 100 (default 50).",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "after_id",
+                        "in": "query",
+                        "required": false,
+                        "description": "For the next page: pass the next_after_id from the previous answer.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Scheduled messages",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListScheduledResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Scheduled messages",
+                                        "value": {
+                                            "success": true,
+                                            "data": [
+                                                {
+                                                    "id": 1060,
+                                                    "phone_number": "+265991234567",
+                                                    "message": "Fees are due on Monday.",
+                                                    "sms_units": 1,
+                                                    "scheduled_at": "2026-12-01T08:00:00+02:00",
+                                                    "created_at": "2026-11-19 09:10:00"
+                                                }
+                                            ],
+                                            "next_after_id": null
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/message_cancel": {
+            "post": {
+                "operationId": "cancel_message",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Cancel a scheduled message",
+                "description": "Cancels a message that is still Scheduled. Its SMS are returned to your balance straight away. Only scheduled messages can be cancelled: one that has started sending cannot be recalled.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:send",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Cancelled",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CancelMessageResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Cancelled",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "id": 1060,
+                                                "status": "Cancelled",
+                                                "remaining_units": 496
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Too late or already cancelled",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Too late or already cancelled",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "NOT_SCHEDULED",
+                                                "message": "Only a message that is still Scheduled can be changed. This one is Delivered.",
+                                                "request_id": "6d961c2236cc0a11",
+                                                "details": {
+                                                    "status": "Delivered"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "description": "The message id returned when you scheduled it.",
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            },
+                            "example": {
+                                "id": 1060
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/message_reschedule": {
+            "post": {
+                "operationId": "reschedule_message",
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Reschedule a message",
+                "description": "Changes the send time of a message that is still Scheduled. The text, recipient and SMS already set aside stay the same. To send it now, cancel it and send a new message.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "messages:send",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Moved",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RescheduleMessageResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Moved",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "id": 1060,
+                                                "status": "Scheduled",
+                                                "scheduled_at": "2026-12-02T08:00:00+02:00"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Time not acceptable",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "Time not acceptable",
+                                        "value": {
+                                            "success": false,
+                                            "error": {
+                                                "code": "INVALID_SCHEDULE",
+                                                "message": "Choose a time at least a minute in the future. To send now, cancel it and send a new message.",
+                                                "request_id": "49bd75b72a325cfe"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "description": "The message id.",
+                                        "type": "integer"
+                                    },
+                                    "scheduled_at": {
+                                        "description": "The new time, at least one minute from now and no more than 365 days ahead, with a time zone.",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "scheduled_at"
+                                ]
+                            },
+                            "example": {
+                                "id": 1060,
+                                "scheduled_at": "2026-12-02T08:00:00+02:00"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/balance": {
+            "get": {
+                "operationId": "get_balance",
+                "tags": [
+                    "Balance"
+                ],
+                "summary": "Get your SMS balance",
+                "description": "Returns what is left of your current plan. Call it before a big send, or on a schedule, and warn your own team when level becomes low. The send response also shows remaining_units after every request.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "x-required-scope": "balance:read",
+                "x-rate-limit-per-minute": 60,
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "The balance",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetBalanceResponse"
+                                },
+                                "examples": {
+                                    "example1": {
+                                        "summary": "The balance",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "active": true,
+                                                "plan": "Starter Monthly",
+                                                "quota": 500,
+                                                "used": 4,
+                                                "reserved": 5,
+                                                "remaining": 491,
+                                                "percent_left": 98,
+                                                "level": "ok",
+                                                "starts_at": "2026-11-18",
+                                                "expires_at": "2026-12-17",
+                                                "days_left": 28,
+                                                "email_otp": {
+                                                    "included": true,
+                                                    "quota": 50,
+                                                    "used": 2,
+                                                    "remaining": 48,
+                                                    "period_start": "2026-11-18",
+                                                    "resets_at": "2026-12-18"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "example2": {
+                                        "summary": "No active plan",
+                                        "value": {
+                                            "success": true,
+                                            "data": {
+                                                "active": false,
+                                                "plan": null,
+                                                "quota": 0,
+                                                "used": 0,
+                                                "reserved": 0,
+                                                "remaining": 0,
+                                                "percent_left": 0,
+                                                "level": "none",
+                                                "starts_at": null,
+                                                "expires_at": null,
+                                                "days_left": null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid API key",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing permission or blocked address",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded: wait Retry-After seconds",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Request-ID": {
+                                "$ref": "#/components/headers/XRequestID"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-Key",
+                "description": "qm_live_… for real messages, qm_test_… for the practice phone (messages endpoints only)."
+            }
+        },
+        "headers": {
+            "XRateLimitLimit": {
+                "description": "Requests allowed a minute on this endpoint.",
+                "schema": {
+                    "type": "integer"
+                }
+            },
+            "XRateLimitRemaining": {
+                "description": "Requests left in the current minute.",
+                "schema": {
+                    "type": "integer"
+                }
+            },
+            "XRateLimitReset": {
+                "description": "Unix time when the window resets.",
+                "schema": {
+                    "type": "integer"
+                }
+            },
+            "XRequestID": {
+                "description": "Quote this when you contact support.",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "RetryAfter": {
+                "description": "Seconds to wait before trying again (429 only).",
+                "schema": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas": {
+            "Error": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "error"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "enum": [
+                            false
+                        ]
+                    },
+                    "error": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "message"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "description": "Stable machine-readable code. Branch on this, never on the message."
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "A sentence you can show to a person. It may be reworded."
+                            },
+                            "request_id": {
+                                "type": "string",
+                                "description": "Quote it when you contact support. Also the X-Request-ID header."
+                            },
+                            "details": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Extra facts for some codes, for example remaining_units."
+                            }
+                        }
+                    }
+                }
+            },
+            "GetAccountResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "organisation",
+                            "key",
+                            "services"
+                        ],
+                        "properties": {
+                            "organisation": {
+                                "type": "object",
+                                "required": [
+                                    "id",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "key": {
+                                "type": "object",
+                                "required": [
+                                    "mode",
+                                    "scopes"
+                                ],
+                                "properties": {
+                                    "mode": {
+                                        "type": "string"
+                                    },
+                                    "scopes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "services": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "key",
+                                        "name",
+                                        "status",
+                                        "details"
+                                    ],
+                                    "properties": {
+                                        "key": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "details": {
+                                            "type": "object",
+                                            "required": [
+                                                "plan",
+                                                "expires_at",
+                                                "remaining_sms",
+                                                "phones",
+                                                "phones_online",
+                                                "receives_replies",
+                                                "ready_to_send"
+                                            ],
+                                            "properties": {
+                                                "plan": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "remaining_sms": {
+                                                    "type": "integer"
+                                                },
+                                                "phones": {
+                                                    "type": "integer"
+                                                },
+                                                "phones_online": {
+                                                    "type": "integer"
+                                                },
+                                                "receives_replies": {
+                                                    "type": "boolean"
+                                                },
+                                                "ready_to_send": {
+                                                    "type": "boolean"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "SendMessageResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "message_ids",
+                            "recipients",
+                            "sms_units",
+                            "status",
+                            "remaining_units",
+                            "idempotent_replay",
+                            "numbers"
+                        ],
+                        "properties": {
+                            "message_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                }
+                            },
+                            "recipients": {
+                                "type": "integer"
+                            },
+                            "sms_units": {
+                                "type": "integer"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "remaining_units": {
+                                "type": "integer"
+                            },
+                            "idempotent_replay": {
+                                "type": "boolean"
+                            },
+                            "numbers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ListDevicesResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "name",
+                                "status",
+                                "last_seen_at",
+                                "networks",
+                                "capacity",
+                                "queued"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "last_seen_at": {
+                                    "type": "string"
+                                },
+                                "networks": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "capacity": {
+                                    "type": "integer"
+                                },
+                                "queued": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "GetMessageResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "phone_number",
+                            "status",
+                            "message_type",
+                            "sms_units",
+                            "scheduled_time",
+                            "created_at",
+                            "sent_at",
+                            "delivered_at",
+                            "failed_at",
+                            "failure_reason",
+                            "mode"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "phone_number": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "message_type": {
+                                "type": "string"
+                            },
+                            "sms_units": {
+                                "type": "integer"
+                            },
+                            "scheduled_time": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "created_at": {
+                                "type": "string"
+                            },
+                            "sent_at": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "delivered_at": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "failed_at": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "failure_reason": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "mode": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "ListMessagesResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data",
+                    "next_before_id"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "phone_number",
+                                "status",
+                                "message_type",
+                                "sms_units",
+                                "scheduled_time",
+                                "created_at",
+                                "sent_at",
+                                "delivered_at",
+                                "failed_at",
+                                "failure_reason"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "phone_number": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "message_type": {
+                                    "type": "string"
+                                },
+                                "sms_units": {
+                                    "type": "integer"
+                                },
+                                "scheduled_time": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "created_at": {
+                                    "type": "string"
+                                },
+                                "sent_at": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "delivered_at": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "failed_at": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "failure_reason": {
+                                    "type": "string",
+                                    "nullable": true
+                                }
+                            }
+                        }
+                    },
+                    "next_before_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "GetInboxResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data",
+                    "next_after_id",
+                    "receives"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "from",
+                                "message",
+                                "received_at"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "from": {
+                                    "type": "string"
+                                },
+                                "message": {
+                                    "type": "string"
+                                },
+                                "received_at": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "next_after_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "receives": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "SendOtpResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "request_reference",
+                            "expires_in",
+                            "status",
+                            "channel"
+                        ],
+                        "properties": {
+                            "request_reference": {
+                                "type": "string"
+                            },
+                            "expires_in": {
+                                "type": "integer"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "channel": {
+                                "type": "string"
+                            },
+                            "email_otp_remaining": {
+                                "type": "integer"
+                            },
+                            "email_otp_resets_at": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "VerifyOtpResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "verified",
+                            "status"
+                        ],
+                        "properties": {
+                            "verified": {
+                                "type": "boolean"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "StatisticsResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "timestamp",
+                    "client",
+                    "period",
+                    "statistics"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "type": "string"
+                    },
+                    "client": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "name"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "period": {
+                        "type": "object",
+                        "required": [
+                            "start_date",
+                            "end_date",
+                            "type"
+                        ],
+                        "properties": {
+                            "start_date": {
+                                "type": "string"
+                            },
+                            "end_date": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "statistics": {
+                        "type": "object",
+                        "required": [
+                            "overview",
+                            "quota",
+                            "recent_messages",
+                            "daily",
+                            "status_distribution",
+                            "top_recipients",
+                            "counts"
+                        ],
+                        "properties": {
+                            "overview": {
+                                "type": "object",
+                                "required": [
+                                    "total",
+                                    "sent",
+                                    "delivered",
+                                    "failed",
+                                    "pending",
+                                    "scheduled",
+                                    "unique_recipients",
+                                    "sms_units"
+                                ],
+                                "properties": {
+                                    "total": {
+                                        "type": "integer"
+                                    },
+                                    "sent": {
+                                        "type": "integer"
+                                    },
+                                    "delivered": {
+                                        "type": "integer"
+                                    },
+                                    "failed": {
+                                        "type": "integer"
+                                    },
+                                    "pending": {
+                                        "type": "integer"
+                                    },
+                                    "scheduled": {
+                                        "type": "integer"
+                                    },
+                                    "unique_recipients": {
+                                        "type": "integer"
+                                    },
+                                    "sms_units": {
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "quota": {
+                                "type": "object",
+                                "required": [
+                                    "plan",
+                                    "quota",
+                                    "used",
+                                    "reserved",
+                                    "remaining",
+                                    "expires_at"
+                                ],
+                                "properties": {
+                                    "plan": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "quota": {
+                                        "type": "integer"
+                                    },
+                                    "used": {
+                                        "type": "integer"
+                                    },
+                                    "reserved": {
+                                        "type": "integer"
+                                    },
+                                    "remaining": {
+                                        "type": "integer"
+                                    },
+                                    "expires_at": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                }
+                            },
+                            "recent_messages": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "id",
+                                        "phone_number",
+                                        "message",
+                                        "status",
+                                        "message_type",
+                                        "sms_units",
+                                        "created_at"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "phone_number": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "message_type": {
+                                            "type": "string"
+                                        },
+                                        "sms_units": {
+                                            "type": "integer"
+                                        },
+                                        "created_at": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "daily": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "date",
+                                        "total",
+                                        "sent",
+                                        "failed"
+                                    ],
+                                    "properties": {
+                                        "date": {
+                                            "type": "string"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "sent": {
+                                            "type": "integer"
+                                        },
+                                        "failed": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            },
+                            "status_distribution": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "status",
+                                        "count"
+                                    ],
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "count": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            },
+                            "top_recipients": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "phone_number",
+                                        "total_messages",
+                                        "successful",
+                                        "failed"
+                                    ],
+                                    "properties": {
+                                        "phone_number": {
+                                            "type": "string"
+                                        },
+                                        "total_messages": {
+                                            "type": "integer"
+                                        },
+                                        "successful": {
+                                            "type": "integer"
+                                        },
+                                        "failed": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            },
+                            "counts": {
+                                "type": "object",
+                                "required": [
+                                    "scheduled",
+                                    "templates",
+                                    "contacts",
+                                    "incoming"
+                                ],
+                                "properties": {
+                                    "scheduled": {
+                                        "type": "integer"
+                                    },
+                                    "templates": {
+                                        "type": "integer"
+                                    },
+                                    "contacts": {
+                                        "type": "integer"
+                                    },
+                                    "incoming": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ListScheduledResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data",
+                    "next_after_id"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "phone_number",
+                                "message",
+                                "sms_units",
+                                "scheduled_at",
+                                "created_at"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "phone_number": {
+                                    "type": "string"
+                                },
+                                "message": {
+                                    "type": "string"
+                                },
+                                "sms_units": {
+                                    "type": "integer"
+                                },
+                                "scheduled_at": {
+                                    "type": "string"
+                                },
+                                "created_at": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "next_after_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "CancelMessageResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "status",
+                            "remaining_units"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "remaining_units": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            },
+            "RescheduleMessageResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "status",
+                            "scheduled_at"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "scheduled_at": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "GetBalanceResponse": {
+                "type": "object",
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "type": "object",
+                        "required": [
+                            "active",
+                            "plan",
+                            "quota",
+                            "used",
+                            "reserved",
+                            "remaining",
+                            "percent_left",
+                            "level",
+                            "starts_at",
+                            "expires_at",
+                            "days_left"
+                        ],
+                        "properties": {
+                            "active": {
+                                "type": "boolean"
+                            },
+                            "plan": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "quota": {
+                                "type": "integer"
+                            },
+                            "used": {
+                                "type": "integer"
+                            },
+                            "reserved": {
+                                "type": "integer"
+                            },
+                            "remaining": {
+                                "type": "integer"
+                            },
+                            "percent_left": {
+                                "type": "integer"
+                            },
+                            "level": {
+                                "type": "string"
+                            },
+                            "starts_at": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "expires_at": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "days_left": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "email_otp": {
+                                "type": "object",
+                                "required": [
+                                    "included",
+                                    "quota",
+                                    "used",
+                                    "remaining",
+                                    "period_start",
+                                    "resets_at"
+                                ],
+                                "properties": {
+                                    "included": {
+                                        "type": "boolean"
+                                    },
+                                    "quota": {
+                                        "type": "integer"
+                                    },
+                                    "used": {
+                                        "type": "integer"
+                                    },
+                                    "remaining": {
+                                        "type": "integer"
+                                    },
+                                    "period_start": {
+                                        "type": "string"
+                                    },
+                                    "resets_at": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,325 @@
+{
+    "about": "Run these in order against a QMGateway server. {{unique}} is a new value each run; {{same_unique}} is the value used by the case before it; {{in_three_days}} and {{in_four_days}} are ISO 8601 times; {{name}} is a value saved by an earlier case (\"save\": name => path in the answer). key: live, test, wrong or none. Every answer must also validate against the schema named in expect.schema inside openapi.json.",
+    "headers_every_answer": [
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset"
+    ],
+    "cases": [
+        {
+            "id": "get-account",
+            "title": "Account",
+            "operationId": "get_account",
+            "method": "GET",
+            "path": "/api/v1/account",
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/GetAccountResponse"
+            }
+        },
+        {
+            "id": "list-devices",
+            "title": "Phones",
+            "operationId": "list_devices",
+            "method": "GET",
+            "path": "/api/v1/devices",
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/ListDevicesResponse"
+            }
+        },
+        {
+            "id": "send-message",
+            "title": "Send one message",
+            "operationId": "send_message",
+            "method": "POST",
+            "path": "/api/v1/messages",
+            "body": {
+                "phone": "+265991234567",
+                "message": "Your order #1052 is ready for collection.",
+                "type": "transactional"
+            },
+            "headers": {
+                "Idempotency-Key": "{{unique}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 202,
+                "schema": "#/components/schemas/SendMessageResponse"
+            },
+            "save": {
+                "message_id": "data.message_ids.0"
+            }
+        },
+        {
+            "id": "send-message",
+            "title": "The same key again returns the same message and sends nothing new",
+            "operationId": "send_message",
+            "method": "POST",
+            "path": "/api/v1/messages",
+            "body": {
+                "phone": "+265991234567",
+                "message": "Your order #1052 is ready for collection.",
+                "type": "transactional"
+            },
+            "headers": {
+                "Idempotency-Key": "{{same_unique}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 202,
+                "schema": "#/components/schemas/SendMessageResponse"
+            }
+        },
+        {
+            "id": "get-message",
+            "title": "Read it back",
+            "operationId": "get_message",
+            "method": "GET",
+            "path": "/api/v1/message_status",
+            "query": {
+                "id": "{{message_id}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/GetMessageResponse"
+            }
+        },
+        {
+            "id": "list-messages",
+            "title": "List messages",
+            "operationId": "list_messages",
+            "method": "GET",
+            "path": "/api/v1/messages",
+            "query": {
+                "limit": 25
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/ListMessagesResponse"
+            }
+        },
+        {
+            "id": "get-inbox",
+            "title": "Inbox",
+            "operationId": "get_inbox",
+            "method": "GET",
+            "path": "/api/v1/inbox",
+            "query": {
+                "after_id": 0,
+                "limit": 50
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/GetInboxResponse"
+            }
+        },
+        {
+            "id": "send-otp",
+            "title": "Send a one-time password",
+            "operationId": "send_otp",
+            "method": "POST",
+            "path": "/api/v1/otp/send",
+            "body": {
+                "phone": "+265991234567",
+                "purpose": "login",
+                "expiry_seconds": 300
+            },
+            "key": "live",
+            "expect": {
+                "status": 202,
+                "schema": "#/components/schemas/SendOtpResponse"
+            },
+            "save": {
+                "otp_reference": "data.request_reference"
+            }
+        },
+        {
+            "id": "verify-otp",
+            "title": "A wrong code is a normal answer, not an error",
+            "operationId": "verify_otp",
+            "method": "POST",
+            "path": "/api/v1/otp/verify",
+            "body": {
+                "request_reference": "{{otp_reference}}",
+                "code": "000000"
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/VerifyOtpResponse"
+            }
+        },
+        {
+            "id": "statistics",
+            "title": "Statistics",
+            "operationId": "statistics",
+            "method": "GET",
+            "path": "/api/v1/statistics",
+            "query": {
+                "period": "month"
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/StatisticsResponse"
+            }
+        },
+        {
+            "id": "send-scheduled",
+            "title": "Schedule a message",
+            "operationId": "send_message",
+            "method": "POST",
+            "path": "/api/v1/messages",
+            "body": {
+                "phone": "+265991234567",
+                "message": "Fees are due on Monday.",
+                "scheduled_at": "{{in_three_days}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 202,
+                "schema": "#/components/schemas/SendMessageResponse"
+            },
+            "save": {
+                "scheduled_id": "data.message_ids.0"
+            }
+        },
+        {
+            "id": "list-scheduled",
+            "title": "Scheduled messages",
+            "operationId": "list_scheduled",
+            "method": "GET",
+            "path": "/api/v1/scheduled",
+            "query": {
+                "limit": 50
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/ListScheduledResponse"
+            }
+        },
+        {
+            "id": "reschedule-message",
+            "title": "Move it",
+            "operationId": "reschedule_message",
+            "method": "POST",
+            "path": "/api/v1/message_reschedule",
+            "body": {
+                "id": "{{scheduled_id}}",
+                "scheduled_at": "{{in_four_days}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/RescheduleMessageResponse"
+            }
+        },
+        {
+            "id": "cancel-message",
+            "title": "Cancel it",
+            "operationId": "cancel_message",
+            "method": "POST",
+            "path": "/api/v1/message_cancel",
+            "body": {
+                "id": "{{scheduled_id}}"
+            },
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/CancelMessageResponse"
+            }
+        },
+        {
+            "id": "get-balance",
+            "title": "SMS balance",
+            "operationId": "get_balance",
+            "method": "GET",
+            "path": "/api/v1/balance",
+            "key": "live",
+            "expect": {
+                "status": 200,
+                "schema": "#/components/schemas/GetBalanceResponse"
+            }
+        },
+        {
+            "id": "errors",
+            "title": "No key",
+            "operationId": "errors",
+            "method": "GET",
+            "path": "/api/v1/balance",
+            "key": "none",
+            "expect": {
+                "status": 401,
+                "error_code": "MISSING_API_KEY",
+                "schema": "#/components/schemas/Error"
+            }
+        },
+        {
+            "id": "errors",
+            "title": "A wrong key",
+            "operationId": "errors",
+            "method": "GET",
+            "path": "/api/v1/balance",
+            "key": "wrong",
+            "expect": {
+                "status": 401,
+                "error_code": "INVALID_API_KEY",
+                "schema": "#/components/schemas/Error"
+            }
+        },
+        {
+            "id": "errors",
+            "title": "A test key where only a live key works",
+            "operationId": "errors",
+            "method": "GET",
+            "path": "/api/v1/balance",
+            "key": "test",
+            "expect": {
+                "status": 401,
+                "error_code": "TEST_KEY_NOT_ALLOWED",
+                "schema": "#/components/schemas/Error"
+            }
+        },
+        {
+            "id": "errors",
+            "title": "A number that cannot be read",
+            "operationId": "errors",
+            "method": "POST",
+            "path": "/api/v1/messages",
+            "body": {
+                "phone": "099123",
+                "message": "x"
+            },
+            "key": "live",
+            "expect": {
+                "status": 422,
+                "error_code": "VALIDATION_ERROR",
+                "schema": "#/components/schemas/Error"
+            }
+        },
+        {
+            "id": "errors",
+            "title": "A message that is not yours",
+            "operationId": "errors",
+            "method": "GET",
+            "path": "/api/v1/message_status",
+            "query": {
+                "id": 2147483000
+            },
+            "key": "live",
+            "expect": {
+                "status": 404,
+                "error_code": "MESSAGE_NOT_FOUND",
+                "schema": "#/components/schemas/Error"
+            }
+        }
+    ]
+}

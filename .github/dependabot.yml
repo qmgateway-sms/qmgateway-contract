@@ -1,0 +1,6 @@
+# Weekly updates for GitHub Actions (so pinned action hashes stay current).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
